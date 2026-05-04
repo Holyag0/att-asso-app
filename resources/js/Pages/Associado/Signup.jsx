@@ -1,0 +1,361 @@
+import { useState, useRef, ChangeEvent } from "react";
+import { Head, useForm } from "@inertiajs/react";
+import { Button } from "@/Components/ui/button";
+import { Input } from "@/Components/ui/input";
+import { Label } from "@/Components/ui/label";
+import { Checkbox } from "@/Components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/Components/ui/select";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/Components/ui/radio-group";
+import { toast, Toaster } from "sonner";
+import { Upload, Send, ShieldCheck, User, Briefcase, FileText, PenTool } from "lucide-react";
+import { SignaturePad } from "@/Components/SignaturePad";
+import { AssociateFormData, ESTADOS_CIVIS, POSTOS_PM_BM } from "@/types/form";
+
+const Signup = () => {
+  const { data, setData, post, processing, errors } = useForm({
+    nomeCompleto: "",
+    dataNascimento: "",
+    cpf: "",
+    naturalidade: "",
+    email: "",
+    estadoCivil: "",
+    telefone1: "",
+    telefone2: "",
+    cep: "",
+    logradouro: "",
+    numero: "",
+    complemento: "",
+    cidade: "",
+    estado: "",
+    corporacao: "PM",
+    matricula: "",
+    postoGraduacao: "",
+    associadoCivil: "Não",
+    rgFrente: "",
+    rgFrenteName: "",
+    rgVerso: "",
+    rgVersoName: "",
+    assinatura: "",
+    autorizoInclusao: false,
+    cienteLGPD: false,
+  });
+
+  const [loadingCep, setLoadingCep] = useState(false);
+  const rgFrenteRef = useRef(null);
+  const rgVersoRef = useRef(null);
+
+  const maskCPF = (v) =>
+    v.replace(/\D/g, "").slice(0, 11)
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+
+  const maskCEP = (v) =>
+    v.replace(/\D/g, "").slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
+
+  const maskPhone = (v) =>
+    v.replace(/\D/g, "").slice(0, 11)
+      .replace(/(\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{5})(\d)/, "$1-$2");
+
+  const handleCEPBlur = async () => {
+    const cep = data.cep.replace(/\D/g, "");
+    if (cep.length !== 8) return;
+    try {
+      setLoadingCep(true);
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const json = await res.json();
+      if (json.erro) {
+        toast.error("CEP não encontrado");
+        return;
+      }
+      setData({
+        ...data,
+        logradouro: json.logradouro || "",
+        cidade: json.localidade || "",
+        estado: json.uf || "",
+      });
+      toast.success("Endereço preenchido");
+    } catch {
+      toast.error("Erro ao consultar CEP");
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
+  const handleFile = (e, key) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setData({
+        ...data,
+        [key]: reader.result,
+        [`${key}Name`]: file.name,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    post(route('signup.store'), {
+      onSuccess: () => toast.success("Cadastro realizado com sucesso!"),
+      onError: (err) => {
+        Object.values(err).forEach(e => toast.error(e));
+      }
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <Head title="Ficha de Associação" />
+      <Toaster position="top-right" />
+
+      {/* Header */}
+      <header className="bg-slate-900 text-white shadow-xl">
+        <div className="container max-w-5xl mx-auto py-12 px-6">
+          <div className="flex items-center gap-6">
+            <div className="h-20 w-20 rounded-full bg-amber-400 flex items-center justify-center shadow-lg">
+              <ShieldCheck className="h-10 w-10 text-slate-900" strokeWidth={2.2} />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">CABEMCE</h1>
+              <p className="text-lg opacity-80">Caixa Beneficente dos Militares do Ceará</p>
+            </div>
+          </div>
+          <div className="mt-10">
+            <h2 className="text-2xl font-semibold italic">Ficha de Associação Online</h2>
+          </div>
+        </div>
+      </header>
+
+      <main className="container max-w-5xl mx-auto py-12 px-6">
+        <form onSubmit={handleSubmit} className="space-y-12">
+          {/* SEÇÃO 1 */}
+          <Section icon={<User />} title="1. Dados Pessoais">
+            <Field label="Nome Completo *" full>
+              <Input value={data.nomeCompleto} onChange={(e) => setData("nomeCompleto", e.target.value)} />
+            </Field>
+            <Field label="CPF *">
+              <Input value={data.cpf} onChange={(e) => setData("cpf", maskCPF(e.target.value))} placeholder="000.000.000-00" />
+            </Field>
+            <Field label="Data de Nascimento *">
+              <Input type="date" value={data.dataNascimento} onChange={(e) => setData("dataNascimento", e.target.value)} />
+            </Field>
+            <Field label="Estado Civil *">
+              <Select value={data.estadoCivil} onValueChange={(v) => setData("estadoCivil", v)}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {ESTADOS_CIVIS.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Naturalidade *">
+              <Input value={data.naturalidade} onChange={(e) => setData("naturalidade", e.target.value)} placeholder="Ex.: Fortaleza/CE" />
+            </Field>
+            <Field label="E-mail *">
+              <Input type="email" value={data.email} onChange={(e) => setData("email", e.target.value)} />
+            </Field>
+            <Field label="WhatsApp 1 *">
+              <Input value={data.telefone1} onChange={(e) => setData("telefone1", maskPhone(e.target.value))} placeholder="(85) 99999-9999" />
+            </Field>
+
+            <div className="md:col-span-2 pt-4 border-t mt-4">
+                <h4 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-wider">Endereço Residencial</h4>
+            </div>
+            <Field label="CEP *">
+              <Input
+                value={data.cep}
+                onChange={(e) => setData("cep", maskCEP(e.target.value))}
+                onBlur={handleCEPBlur}
+                placeholder={loadingCep ? "Buscando..." : "00000-000"}
+              />
+            </Field>
+            <Field label="Logradouro *">
+              <Input value={data.logradouro} onChange={(e) => setData("logradouro", e.target.value)} />
+            </Field>
+            <Field label="Número *">
+              <Input value={data.numero} onChange={(e) => setData("numero", e.target.value)} />
+            </Field>
+            <Field label="Bairro *">
+              <Input value={data.bairro} onChange={(e) => setData("bairro", e.target.value)} />
+            </Field>
+            <Field label="Cidade *">
+              <Input value={data.cidade} onChange={(e) => setData("cidade", e.target.value)} />
+            </Field>
+            <Field label="Estado *">
+              <Input value={data.estado} maxLength={2} onChange={(e) => setData("estado", e.target.value.toUpperCase())} />
+            </Field>
+          </Section>
+
+          {/* SEÇÃO 2 */}
+          <Section icon={<Briefcase />} title="2. Sobre a Carreira">
+            <Field label="Corporação *">
+              <RadioGroup
+                value={data.corporacao}
+                onValueChange={(v) => setData("corporacao", v)}
+                className="flex gap-8 pt-3"
+              >
+                <div className="flex items-center gap-2 cursor-pointer">
+                  <RadioGroupItem value="PM" id="pm" />
+                  <Label htmlFor="pm" className="cursor-pointer">PM</Label>
+                </div>
+                <div className="flex items-center gap-2 cursor-pointer">
+                  <RadioGroupItem value="BM" id="bm" />
+                  <Label htmlFor="bm" className="cursor-pointer">CBM</Label>
+                </div>
+              </RadioGroup>
+            </Field>
+            <Field label="Número de Matrícula *">
+              <Input value={data.matricula} onChange={(e) => setData("matricula", e.target.value)} />
+            </Field>
+            <Field label="Posto / Graduação *">
+              <Select value={data.postoGraduacao} onValueChange={(v) => setData("postoGraduacao", v)}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {POSTOS_PM_BM.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="É associado civil? *">
+              <RadioGroup
+                value={data.associadoCivil}
+                onValueChange={(v) => setData("associadoCivil", v)}
+                className="flex gap-8 pt-3"
+              >
+                <div className="flex items-center gap-2 cursor-pointer">
+                  <RadioGroupItem value="Sim" id="sim" />
+                  <Label htmlFor="sim" className="cursor-pointer">Sim</Label>
+                </div>
+                <div className="flex items-center gap-2 cursor-pointer">
+                  <RadioGroupItem value="Não" id="nao" />
+                  <Label htmlFor="nao" className="cursor-pointer">Não</Label>
+                </div>
+              </RadioGroup>
+            </Field>
+          </Section>
+
+          {/* SEÇÃO 3 */}
+          <Section icon={<FileText />} title="3. Upload de Documentos">
+            <FileUpload
+              label="RG - Frente *"
+              fileName={data.rgFrenteName}
+              previewSrc={data.rgFrente}
+              onClick={() => rgFrenteRef.current?.click()}
+            />
+            <input ref={rgFrenteRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e, "rgFrente")} />
+
+            <FileUpload
+              label="RG - Verso *"
+              fileName={data.rgVersoName}
+              previewSrc={data.rgVerso}
+              onClick={() => rgVersoRef.current?.click()}
+            />
+            <input ref={rgVersoRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e, "rgVerso")} />
+          </Section>
+
+          {/* SEÇÃO 4 */}
+          <Section icon={<PenTool />} title="4. Assinatura">
+            <div className="md:col-span-2">
+              <p className="text-sm text-slate-500 mb-6">
+                Desenhe sua assinatura na área abaixo.
+              </p>
+              <SignaturePad onChange={(v) => setData("assinatura", v)} />
+            </div>
+          </Section>
+
+          {/* TERMOS */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 space-y-6 shadow-sm">
+            <label className="flex gap-4 items-start cursor-pointer">
+              <Checkbox
+                checked={data.autorizoInclusao}
+                onCheckedChange={(c) => setData("autorizoInclusao", !!c)}
+                className="mt-1 h-6 w-6"
+              />
+              <span className="text-sm text-slate-600 leading-relaxed">
+                Afirmo que as informações prestadas por mim, relativas a minha atualização cadastral de <strong>SÓCIO</strong> da <strong>CABEMCE</strong>, estão corretas e verdadeiras.
+              </span>
+            </label>
+            <label className="flex gap-4 items-start cursor-pointer">
+              <Checkbox
+                checked={data.cienteLGPD}
+                onCheckedChange={(c) => setData("cienteLGPD", !!c)}
+                className="mt-1 h-6 w-6"
+              />
+              <span className="text-sm text-slate-600 leading-relaxed">
+                Estou ciente de que estou amparado pela <strong>Lei Geral de Proteção de Dados Pessoais</strong> (LGPD).
+              </span>
+            </label>
+          </div>
+
+          <Button
+            type="submit"
+            disabled={processing}
+            className="w-full bg-slate-900 hover:bg-slate-800 text-white text-lg h-16 rounded-2xl shadow-xl transition-all active:scale-[0.98]"
+          >
+            <Send className="mr-3 h-5 w-5" />
+            {processing ? "Enviando..." : "Finalizar e Enviar Cadastro"}
+          </Button>
+        </form>
+      </main>
+
+      <footer className="py-12 text-center text-sm text-slate-400">
+        © {new Date().getFullYear()} CABEMCE — Caixa Beneficente dos Militares do Ceará
+      </footer>
+    </div>
+  );
+};
+
+const Section = ({ icon, title, children }) => (
+  <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden">
+    <header className="bg-slate-900 text-white px-8 py-6 flex items-center gap-4">
+      <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">{icon}</div>
+      <h3 className="font-bold text-xl">{title}</h3>
+    </header>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 md:p-10">{children}</div>
+  </section>
+);
+
+const Field = ({ label, children, full }) => (
+  <div className={full ? "md:col-span-2 space-y-3" : "space-y-3"}>
+    <Label className="text-sm font-bold text-slate-700 ml-1">{label}</Label>
+    {children}
+  </div>
+);
+
+const FileUpload = ({ label, fileName, previewSrc, onClick }) => (
+  <div className="space-y-3">
+    <Label className="text-sm font-bold text-slate-700 ml-1">{label}</Label>
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full border-2 border-dashed border-slate-200 rounded-3xl p-6 hover:border-slate-400 hover:bg-slate-50 transition-all flex flex-col items-center gap-3 min-h-[160px] justify-center"
+    >
+      {previewSrc ? (
+        <>
+          <img src={previewSrc} alt={fileName} className="max-h-28 rounded-xl shadow-md" />
+          <span className="text-xs font-semibold text-slate-400 truncate max-w-full px-4">{fileName}</span>
+        </>
+      ) : (
+        <>
+          <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center">
+            <Upload className="h-6 w-6 text-slate-400" />
+          </div>
+          <span className="text-sm font-bold text-slate-400">Selecionar Imagem</span>
+        </>
+      )}
+    </button>
+  </div>
+);
+
+export default Signup;

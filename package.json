@@ -1,0 +1,45 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "@tailwindcss/postcss": "^4.2.4",
+        "@tailwindcss/vite": "^4.2.4",
+        "@vitejs/plugin-react": "^4.7.0",
+        "autoprefixer": "^10.5.0",
+        "axios": "^1.16.0",
+        "concurrently": "^9.0.1",
+        "laravel-vite-plugin": "^2.0.0",
+        "lodash": "^4.18.1",
+        "postcss": "^8.5.13",
+        "tailwindcss": "^4.2.4",
+        "vite": "^6.4.2"
+    },
+    "dependencies": {
+        "@alpinejs/mask": "^3.15.12",
+        "@inertiajs/react": "^3.0.3",
+        "@radix-ui/react-checkbox": "^1.3.3",
+        "@radix-ui/react-label": "^2.1.8",
+        "@radix-ui/react-radio-group": "^1.3.8",
+        "@radix-ui/react-select": "^2.2.6",
+        "@radix-ui/react-slot": "^1.2.4",
+        "alpinejs": "^3.15.12",
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "framer-motion": "^12.38.0",
+        "lucide-react": "^1.14.0",
+        "prop-types": "^15.8.1",
+        "react": "^19.2.5",
+        "react-dom": "^19.2.5",
+        "react-signature-canvas": "^1.1.0-alpha.2",
+        "sonner": "^2.0.7",
+        "tailwind-merge": "^3.5.0",
+        "tailwindcss-animate": "^1.0.7",
+        "ziggy-js": "^2.6.2",
+        "zod": "^4.4.3"
+    }
+}
