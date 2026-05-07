@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Associados\Schemas;
 
 use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Schema;
 
@@ -12,6 +13,10 @@ class AssociadoInfolist
     {
         return $schema
             ->components([
+                ImageEntry::make('foto_associado_path')
+                    ->label('Foto do Associado')
+                    ->circular()
+                    ->columnSpanFull(),
                 TextEntry::make('nome'),
                 TextEntry::make('cpf'),
                 TextEntry::make('data_nascimento')
@@ -34,10 +39,10 @@ class AssociadoInfolist
                 TextEntry::make('posto_graduacao'),
                 IconEntry::make('is_civil')
                     ->boolean(),
-                TextEntry::make('rg_frente_path')
-                    ->placeholder('-'),
-                TextEntry::make('rg_verso_path')
-                    ->placeholder('-'),
+                ImageEntry::make('rg_frente_path')
+                    ->label('RG Frente'),
+                ImageEntry::make('rg_verso_path')
+                    ->label('RG Verso'),
                 TextEntry::make('assinatura')
                     ->placeholder('-')
                     ->columnSpanFull(),

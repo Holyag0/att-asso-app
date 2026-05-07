@@ -32,7 +32,7 @@ export const SignaturePad = ({ onChange }: Props) => {
           ref={sigRef}
           penColor="hsl(215, 75%, 22%)"
           canvasProps={{
-            className: "w-full h-48 touch-none",
+            className: "w-full h-64 touch-none",
           }}
           onEnd={handleEnd}
         />

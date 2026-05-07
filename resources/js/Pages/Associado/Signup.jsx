@@ -16,9 +16,9 @@ import {
   RadioGroupItem,
 } from "@/Components/ui/radio-group";
 import { toast, Toaster } from "sonner";
-import { Upload, Send, ShieldCheck, User, Briefcase, FileText, PenTool } from "lucide-react";
+import { Upload, Send, User, Briefcase, FileText, PenTool } from "lucide-react";
 import { SignaturePad } from "@/Components/SignaturePad";
-import { AssociateFormData, ESTADOS_CIVIS, POSTOS_PM_BM } from "@/types/form";
+import { ESTADOS_CIVIS, POSTOS_PM_BM } from "@/types/form";
 
 const Signup = () => {
   const { data, setData, post, processing, errors } = useForm({
@@ -44,6 +44,8 @@ const Signup = () => {
     rgFrenteName: "",
     rgVerso: "",
     rgVersoName: "",
+    fotoAssociado: "",
+    fotoAssociadoName: "",
     assinatura: "",
     autorizoInclusao: false,
     cienteLGPD: false,
@@ -52,6 +54,7 @@ const Signup = () => {
   const [loadingCep, setLoadingCep] = useState(false);
   const rgFrenteRef = useRef(null);
   const rgVersoRef = useRef(null);
+  const fotoAssociadoRef = useRef(null);
 
   const maskCPF = (v) =>
     v.replace(/\D/g, "").slice(0, 11)
@@ -117,16 +120,16 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-white">
       <Head title="Ficha de Associação" />
       <Toaster position="top-right" />
 
       {/* Header */}
-      <header className="bg-slate-900 text-white shadow-xl">
+      <header className="bg-sky-700 text-white shadow-xl">
         <div className="container max-w-5xl mx-auto py-12 px-6">
           <div className="flex items-center gap-6">
-            <div className="h-20 w-20 rounded-full bg-amber-400 flex items-center justify-center shadow-lg">
-              <ShieldCheck className="h-10 w-10 text-slate-900" strokeWidth={2.2} />
+            <div className="h-24 w-24 flex items-center justify-center">
+              <img src="/images/logo.png" alt="CABEMCE Logo" className="h-full w-full object-contain" />
             </div>
             <div>
               <h1 className="text-3xl font-bold tracking-tight">CABEMCE</h1>
@@ -171,7 +174,7 @@ const Signup = () => {
             </Field>
 
             <div className="md:col-span-2 pt-4 border-t mt-4">
-                <h4 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-wider">Endereço Residencial</h4>
+                <h4 className="text-sm font-bold text-sky-700 mb-4 uppercase tracking-wider">Endereço Residencial</h4>
             </div>
             <Field label="CEP *">
               <Input
@@ -248,6 +251,14 @@ const Signup = () => {
           {/* SEÇÃO 3 */}
           <Section icon={<FileText />} title="3. Upload de Documentos">
             <FileUpload
+              label="Foto do Associado *"
+              fileName={data.fotoAssociadoName}
+              previewSrc={data.fotoAssociado}
+              onClick={() => fotoAssociadoRef.current?.click()}
+            />
+            <input ref={fotoAssociadoRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e, "fotoAssociado")} />
+
+            <FileUpload
               label="RG - Frente *"
               fileName={data.rgFrenteName}
               previewSrc={data.rgFrente}
@@ -280,20 +291,20 @@ const Signup = () => {
               <Checkbox
                 checked={data.autorizoInclusao}
                 onCheckedChange={(c) => setData("autorizoInclusao", !!c)}
-                className="mt-1 h-6 w-6"
+                className="mt-1 h-6 w-6 border-sky-300 data-[state=checked]:bg-sky-700"
               />
-              <span className="text-sm text-slate-600 leading-relaxed">
-                Afirmo que as informações prestadas por mim, relativas a minha atualização cadastral de <strong>SÓCIO</strong> da <strong>CABEMCE</strong>, estão corretas e verdadeiras.
+              <span className="text-sm text-sky-800 leading-relaxed">
+                Afirmo que as informações prestadas por mim, relativas a minha atualização cadastral de SÓCIO da CABEMCE, estão corretas e verdadeiras.
               </span>
             </label>
             <label className="flex gap-4 items-start cursor-pointer">
               <Checkbox
                 checked={data.cienteLGPD}
                 onCheckedChange={(c) => setData("cienteLGPD", !!c)}
-                className="mt-1 h-6 w-6"
+                className="mt-1 h-6 w-6 border-sky-300 data-[state=checked]:bg-sky-700"
               />
-              <span className="text-sm text-slate-600 leading-relaxed">
-                Estou ciente de que estou amparado pela <strong>Lei Geral de Proteção de Dados Pessoais</strong> (LGPD).
+              <span className="text-sm text-sky-800 leading-relaxed">
+                Estou ciente de que estou amparado pela Lei Geral de Proteção de Dados Pessoais
               </span>
             </label>
           </div>
@@ -301,7 +312,7 @@ const Signup = () => {
           <Button
             type="submit"
             disabled={processing}
-            className="w-full bg-slate-900 hover:bg-slate-800 text-white text-lg h-16 rounded-2xl shadow-xl transition-all active:scale-[0.98]"
+            className="w-full bg-red-600 hover:bg-red-700 text-white text-lg h-16 rounded-2xl shadow-xl transition-all active:scale-[0.98]"
           >
             <Send className="mr-3 h-5 w-5" />
             {processing ? "Enviando..." : "Finalizar e Enviar Cadastro"}
@@ -309,7 +320,7 @@ const Signup = () => {
         </form>
       </main>
 
-      <footer className="py-12 text-center text-sm text-slate-400">
+      <footer className="py-12 text-center text-sm text-sky-700/50">
         © {new Date().getFullYear()} CABEMCE — Caixa Beneficente dos Militares do Ceará
       </footer>
     </div>
@@ -317,8 +328,8 @@ const Signup = () => {
 };
 
 const Section = ({ icon, title, children }) => (
-  <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden">
-    <header className="bg-slate-900 text-white px-8 py-6 flex items-center gap-4">
+  <section className="bg-white rounded-[2.5rem] border border-sky-100 shadow-xl overflow-hidden">
+    <header className="bg-sky-700 text-white px-8 py-6 flex items-center gap-4">
       <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">{icon}</div>
       <h3 className="font-bold text-xl">{title}</h3>
     </header>
@@ -328,18 +339,18 @@ const Section = ({ icon, title, children }) => (
 
 const Field = ({ label, children, full }) => (
   <div className={full ? "md:col-span-2 space-y-3" : "space-y-3"}>
-    <Label className="text-sm font-bold text-slate-700 ml-1">{label}</Label>
+    <Label className="text-sm font-bold text-sky-800 ml-1">{label}</Label>
     {children}
   </div>
 );
 
 const FileUpload = ({ label, fileName, previewSrc, onClick }) => (
   <div className="space-y-3">
-    <Label className="text-sm font-bold text-slate-700 ml-1">{label}</Label>
+    <Label className="text-sm font-bold text-sky-800 ml-1">{label}</Label>
     <button
       type="button"
       onClick={onClick}
-      className="w-full border-2 border-dashed border-slate-200 rounded-3xl p-6 hover:border-slate-400 hover:bg-slate-50 transition-all flex flex-col items-center gap-3 min-h-[160px] justify-center"
+      className="w-full border-2 border-dashed border-sky-100 rounded-3xl p-6 hover:border-sky-300 hover:bg-sky-50 transition-all flex flex-col items-center gap-3 min-h-[160px] justify-center"
     >
       {previewSrc ? (
         <>

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Associados\Schemas;
 
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -14,6 +15,11 @@ class AssociadoForm
     {
         return $schema
             ->components([
+                FileUpload::make('foto_associado_path')
+                    ->label('Foto do Associado')
+                    ->image()
+                    ->directory('associados/fotos')
+                    ->columnSpanFull(),
                 TextInput::make('nome')
                     ->required(),
                 TextInput::make('cpf')
@@ -52,8 +58,14 @@ class AssociadoForm
                     ->required(),
                 Toggle::make('is_civil')
                     ->required(),
-                TextInput::make('rg_frente_path'),
-                TextInput::make('rg_verso_path'),
+                FileUpload::make('rg_frente_path')
+                    ->label('RG Frente')
+                    ->image()
+                    ->directory('associados/rg'),
+                FileUpload::make('rg_verso_path')
+                    ->label('RG Verso')
+                    ->image()
+                    ->directory('associados/rg'),
                 Textarea::make('assinatura')
                     ->columnSpanFull(),
                 Toggle::make('aceite_termos')

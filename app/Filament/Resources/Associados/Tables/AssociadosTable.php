@@ -17,59 +17,24 @@ class AssociadosTable
         return $table
             ->columns([
                 TextColumn::make('nome')
-                    ->searchable(),
-                TextColumn::make('cpf')
-                    ->searchable(),
-                TextColumn::make('data_nascimento')
-                    ->date()
+                    ->searchable()
                     ->sortable(),
-                TextColumn::make('estado_civil')
-                    ->searchable(),
-                TextColumn::make('naturalidade')
+                TextColumn::make('matricula')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('posto_graduacao')
+                    ->label('Posto/Graduação')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('corporacao')
+                    ->label('Corporação')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('telefone_whatsapp')
+                    ->label('Telefone')
                     ->searchable(),
                 TextColumn::make('email')
-                    ->label('Email address')
                     ->searchable(),
-                TextColumn::make('telefone_whatsapp')
-                    ->searchable(),
-                TextColumn::make('cep')
-                    ->searchable(),
-                TextColumn::make('logradouro')
-                    ->searchable(),
-                TextColumn::make('numero')
-                    ->searchable(),
-                TextColumn::make('complemento')
-                    ->searchable(),
-                TextColumn::make('bairro')
-                    ->searchable(),
-                TextColumn::make('cidade')
-                    ->searchable(),
-                TextColumn::make('estado')
-                    ->searchable(),
-                TextColumn::make('corporacao')
-                    ->searchable(),
-                TextColumn::make('matricula')
-                    ->searchable(),
-                TextColumn::make('posto_graduacao')
-                    ->searchable(),
-                IconColumn::make('is_civil')
-                    ->boolean(),
-                TextColumn::make('rg_frente_path')
-                    ->searchable(),
-                TextColumn::make('rg_verso_path')
-                    ->searchable(),
-                IconColumn::make('aceite_termos')
-                    ->boolean(),
-                IconColumn::make('ciencia_lgpd')
-                    ->boolean(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //

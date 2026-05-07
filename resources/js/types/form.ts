@@ -24,6 +24,8 @@ export interface AssociateFormData {
   rgFrenteName: string;
   rgVerso: string;
   rgVersoName: string;
+  fotoAssociado: string;
+  fotoAssociadoName: string;
   // Assinatura
   assinatura: string; // base64
   // Termos

@@ -27,6 +27,7 @@ class Associado extends Model
         'is_civil',
         'rg_frente_path',
         'rg_verso_path',
+        'foto_associado_path',
         'assinatura',
         'aceite_termos',
         'ciencia_lgpd',
