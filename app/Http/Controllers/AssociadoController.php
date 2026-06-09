@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Associado;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -44,6 +46,7 @@ class AssociadoController extends Controller
 
         // Map React fields to Database fields if they differ
         $data = [
+            'tipo_cadastro' => 'att_cadastral',
             'nome' => $validated['nomeCompleto'],
             'cpf' => $validated['cpf'],
             'data_nascimento' => $validated['dataNascimento'],
@@ -71,22 +74,47 @@ class AssociadoController extends Controller
         $data['rg_verso_path'] = $this->saveBase64Image($request->input('rgVerso'), 'associados/rg');
         $data['foto_associado_path'] = $this->saveBase64Image($request->input('fotoAssociado'), 'associados/fotos');
 
-        Associado::create($data);
+        $associado = Associado::create($data);
 
-        return redirect()->back()->with('message', 'Cadastro realizado com sucesso!');
+        $pdfUrl = URL::signedRoute('associados.pdf.public', ['associado' => $associado->id]);
+
+        return redirect()->back()->with([
+            'success' => true,
+            'message' => 'Cadastro realizado com sucesso!',
+            'pdf_url' => $pdfUrl,
+        ]);
+    }
+
+    public function generatePdf(Associado $associado)
+    {
+        $pdf = Pdf::loadView('pdf.associado', ['associado' => $associado]);
+        $pdf->setPaper('a4', 'portrait');
+
+        $filename = 'ficha-'.str_replace(['.', '-'], '', $associado->cpf).'.pdf';
+
+        return $pdf->download($filename);
+    }
+
+    public function generatePdfPublic(Request $request, Associado $associado)
+    {
+        if (! $request->hasValidSignature()) {
+            abort(401);
+        }
+
+        return $this->generatePdf($associado);
     }
 
     private function saveBase64Image(?string $base64, string $directory): ?string
     {
-        if (!$base64 || !str_contains($base64, ';base64,')) {
+        if (! $base64 || ! str_contains($base64, ';base64,')) {
             return null;
         }
 
         try {
             $format = explode('/', explode(':', substr($base64, 0, strpos($base64, ';')))[1])[1];
             $image = str_replace(' ', '+', explode(',', $base64)[1]);
-            $fileName = Str::random(40) . '.' . $format;
-            $path = $directory . '/' . $fileName;
+            $fileName = Str::random(40).'.'.$format;
+            $path = $directory.'/'.$fileName;
 
             Storage::disk('public')->put($path, base64_decode($image));
 

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Associado extends Model
 {
     protected $fillable = [
+        'tipo_cadastro',
         'nome',
         'cpf',
         'data_nascimento',

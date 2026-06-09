@@ -17,44 +17,80 @@ class AssociadoInfolist
                     ->label('Foto do Associado')
                     ->circular()
                     ->columnSpanFull(),
-                TextEntry::make('nome'),
-                TextEntry::make('cpf'),
+                TextEntry::make('tipo_cadastro')
+                    ->label('Tipo de Cadastro')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'novo_cadastro' => 'Novo Cadastro',
+                        'att_cadastral' => 'Atualização Cadastral',
+                        default => $state,
+                    })
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'novo_cadastro' => 'success',
+                        'att_cadastral' => 'warning',
+                        default => 'gray',
+                    }),
+                TextEntry::make('nome')
+                    ->label('Nome Completo'),
+                TextEntry::make('cpf')
+                    ->label('CPF'),
                 TextEntry::make('data_nascimento')
-                    ->date(),
-                TextEntry::make('estado_civil'),
-                TextEntry::make('naturalidade'),
+                    ->label('Data de Nascimento')
+                    ->date('d/m/Y'),
+                TextEntry::make('estado_civil')
+                    ->label('Estado Civil'),
+                TextEntry::make('naturalidade')
+                    ->label('Naturalidade'),
                 TextEntry::make('email')
-                    ->label('Email address'),
-                TextEntry::make('telefone_whatsapp'),
-                TextEntry::make('cep'),
-                TextEntry::make('logradouro'),
-                TextEntry::make('numero'),
+                    ->label('E-mail'),
+                TextEntry::make('telefone_whatsapp')
+                    ->label('Telefone / WhatsApp'),
+                TextEntry::make('cep')
+                    ->label('CEP'),
+                TextEntry::make('logradouro')
+                    ->label('Logradouro'),
+                TextEntry::make('numero')
+                    ->label('Número'),
                 TextEntry::make('complemento')
+                    ->label('Complemento')
                     ->placeholder('-'),
-                TextEntry::make('bairro'),
-                TextEntry::make('cidade'),
-                TextEntry::make('estado'),
-                TextEntry::make('corporacao'),
-                TextEntry::make('matricula'),
-                TextEntry::make('posto_graduacao'),
+                TextEntry::make('bairro')
+                    ->label('Bairro'),
+                TextEntry::make('cidade')
+                    ->label('Cidade'),
+                TextEntry::make('estado')
+                    ->label('Estado'),
+                TextEntry::make('corporacao')
+                    ->label('Corporação'),
+                TextEntry::make('matricula')
+                    ->label('Matrícula'),
+                TextEntry::make('posto_graduacao')
+                    ->label('Posto / Graduação'),
                 IconEntry::make('is_civil')
+                    ->label('É Civil?')
                     ->boolean(),
                 ImageEntry::make('rg_frente_path')
-                    ->label('RG Frente'),
+                    ->label('Envio de Documento - RG Frente'),
                 ImageEntry::make('rg_verso_path')
-                    ->label('RG Verso'),
+                    ->label('Envio de Documento - RG Verso'),
                 TextEntry::make('assinatura')
-                    ->placeholder('-')
+                    ->label('Assinatura')
+                    ->html()
+                    ->formatStateUsing(fn ($state) => $state ? "<img src=\"{$state}\" alt=\"Assinatura\" style=\"max-height: 100px; border: 1px solid #ccc; background: white; padding: 4px; border-radius: 4px;\" />" : '-')
                     ->columnSpanFull(),
                 IconEntry::make('aceite_termos')
+                    ->label('Aceitou os Termos?')
                     ->boolean(),
                 IconEntry::make('ciencia_lgpd')
+                    ->label('Ciente da LGPD?')
                     ->boolean(),
                 TextEntry::make('created_at')
-                    ->dateTime()
+                    ->label('Criado em')
+                    ->dateTime('d/m/Y H:i')
                     ->placeholder('-'),
                 TextEntry::make('updated_at')
-                    ->dateTime()
+                    ->label('Atualizado em')
+                    ->dateTime('d/m/Y H:i')
                     ->placeholder('-'),
             ]);
     }

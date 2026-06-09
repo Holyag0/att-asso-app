@@ -1,5 +1,5 @@
 import { useState, useRef, ChangeEvent } from "react";
-import { Head, useForm } from "@inertiajs/react";
+import { Head, useForm, usePage } from "@inertiajs/react";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
@@ -52,6 +52,9 @@ const Signup = () => {
   });
 
   const [loadingCep, setLoadingCep] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState("");
+
   const rgFrenteRef = useRef(null);
   const rgVersoRef = useRef(null);
   const fotoAssociadoRef = useRef(null);
@@ -112,7 +115,15 @@ const Signup = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     post(route('signup.store'), {
-      onSuccess: () => toast.success("Cadastro realizado com sucesso!"),
+      onSuccess: (page) => {
+        const flash = page.props.flash;
+        if (flash && flash.success) {
+          setPdfUrl(flash.pdf_url);
+          setShowSuccessModal(true);
+        } else {
+          toast.success("Cadastro realizado com sucesso!");
+        }
+      },
       onError: (err) => {
         Object.values(err).forEach(e => toast.error(e));
       }
@@ -143,6 +154,27 @@ const Signup = () => {
       </header>
 
       <main className="container max-w-5xl mx-auto py-12 px-6">
+        {/* Instruções Gov.br */}
+        <div className="bg-blue-50 border border-blue-200 rounded-[2rem] p-8 mb-8 shadow-sm flex flex-col md:flex-row gap-6 items-start">
+          <div className="h-12 w-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="space-y-2">
+            <h4 className="text-lg font-bold text-blue-950">Quer assinar digitalmente pelo Gov.br?</h4>
+            <p className="text-sm text-blue-900 leading-relaxed">
+              Caso prefira assinar a sua ficha usando a assinatura eletrônica oficial do <strong>Gov.br</strong>, siga estes passos:
+            </p>
+            <ol className="list-decimal list-inside text-sm text-blue-900/80 space-y-1.5 pl-2">
+              <li>Preencha todos os campos do formulário abaixo normalmente.</li>
+              <li>Finalize o envio do cadastro e, no modal de confirmação, clique em <strong>"Baixar Minha Ficha (PDF)"</strong>.</li>
+              <li>Acesse o portal de assinaturas digitais do <a href="https://assinador.iti.br/" target="_blank" rel="noopener noreferrer" className="underline font-bold text-blue-600 hover:text-blue-800">Gov.br</a> e assine o arquivo PDF baixado.</li>
+              <li>Com o PDF assinado pelo Gov.br, entre em contato diretamente com o nosso <strong>setor de pecúlio</strong> para validar o seu documento.</li>
+            </ol>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-12">
           {/* SEÇÃO 1 */}
           <Section icon={<User />} title="1. Dados Pessoais">
@@ -249,7 +281,7 @@ const Signup = () => {
           </Section>
 
           {/* SEÇÃO 3 */}
-          <Section icon={<FileText />} title="3. Upload de Documentos">
+          <Section icon={<FileText />} title="3. Envio de Documentos">
             <FileUpload
               label="Foto do Associado *"
               fileName={data.fotoAssociadoName}
@@ -281,6 +313,14 @@ const Signup = () => {
               <p className="text-sm text-slate-500 mb-6">
                 Desenhe sua assinatura na área abaixo.
               </p>
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 mb-6 flex gap-3 text-xs leading-relaxed">
+                <svg className="h-5 w-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>
+                  <strong>Atenção:</strong> A assinatura desenhada deve ser o mais semelhante possível com a assinatura que consta em seu documento de identidade (RG).
+                </span>
+              </div>
               <SignaturePad onChange={(v) => setData("assinatura", v)} />
             </div>
           </Section>
@@ -323,6 +363,54 @@ const Signup = () => {
       <footer className="py-12 text-center text-sm text-sky-700/50">
         © {new Date().getFullYear()} CABEMCE — Caixa Beneficente dos Militares do Ceará
       </footer>
+
+      {/* Modal de Sucesso com Download de PDF */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8 border border-sky-100 animate-in zoom-in-95 duration-200 text-center">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-emerald-100 text-emerald-600 mb-6">
+              <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
+            <h3 className="text-2xl font-bold text-sky-950 mb-2">
+              Cadastro Concluído!
+            </h3>
+            
+            <p className="text-sm text-slate-500 mb-8 leading-relaxed">
+              Sua ficha de associação foi enviada com sucesso para a CABEMCE.
+            </p>
+            
+            <div className="space-y-3">
+              {pdfUrl && (
+                <a
+                  href={pdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center w-full bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold h-14 rounded-xl shadow-lg transition-all active:scale-[0.98] gap-2"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Baixar Minha Ficha (PDF)
+                </a>
+              )}
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  window.location.reload();
+                }}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-base font-bold h-14 rounded-xl transition-all"
+              >
+                Concluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

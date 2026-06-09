@@ -48,6 +48,17 @@ services:
                 - '${DB_USERNAME}'
             retries: 3
             timeout: 5s
+    ngrok:
+        image: ngrok/ngrok:latest
+        command:
+            - 'http'
+            - 'host.docker.internal:80'
+        environment:
+            NGROK_AUTHTOKEN: '${NGROK_AUTHTOKEN}'
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        networks:
+            - sail
 networks:
     sail:
         driver: bridge
