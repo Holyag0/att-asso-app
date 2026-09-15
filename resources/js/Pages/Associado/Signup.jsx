@@ -19,6 +19,7 @@ import { toast, Toaster } from "sonner";
 import { Upload, Send, User, Briefcase, FileText, PenTool } from "lucide-react";
 import { SignaturePad } from "@/Components/SignaturePad";
 import { ESTADOS_CIVIS, POSTOS_PM_BM } from "@/types/form";
+import ContratoCivil from "@/Pages/Associado/ContratoCivil";
 
 const Signup = () => {
   const { data, setData, post, processing, errors } = useForm({
@@ -53,7 +54,40 @@ const Signup = () => {
 
   const [loadingCep, setLoadingCep] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showAgeModal, setShowAgeModal] = useState(false);
+  const [ageModalInfo, setAgeModalInfo] = useState({ age: 0, limit: 0, isCivil: false });
   const [pdfUrl, setPdfUrl] = useState("");
+  const [step, setStep] = useState(1);
+
+  const calculateAge = (birthDateString) => {
+    if (!birthDateString || birthDateString.length < 10) return null;
+    const birthDate = new Date(birthDateString + "T00:00:00");
+    if (isNaN(birthDate.getTime())) return null;
+    const year = birthDate.getFullYear();
+    if (year < 1900 || year > new Date().getFullYear()) return null;
+
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const checkAgeRestriction = (formData = data) => {
+    const age = calculateAge(formData.dataNascimento);
+    if (age !== null) {
+      const isCivil = formData.associadoCivil === "Sim";
+      const maxAge = isCivil ? 55 : 49;
+      if (age > maxAge) {
+        setAgeModalInfo({ age, limit: maxAge, isCivil });
+        setShowAgeModal(true);
+        return false;
+      }
+    }
+    return true;
+  };
 
   const rgFrenteRef = useRef(null);
   const rgVersoRef = useRef(null);
@@ -114,6 +148,16 @@ const Signup = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!checkAgeRestriction()) {
+      return;
+    }
+
+    if (data.associadoCivil === "Sim") {
+      setStep(2);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     post(route('signup.store'), {
       onSuccess: (page) => {
         const flash = page.props.flash;
@@ -129,6 +173,74 @@ const Signup = () => {
       }
     });
   };
+
+  if (step === 2) {
+    return (
+      <>
+        <ContratoCivil
+          initialData={data}
+          onBack={(isSuccess, pdf_url) => {
+            if (isSuccess) {
+              setPdfUrl(pdf_url);
+              setShowSuccessModal(true);
+              setStep(1);
+            } else {
+              setStep(1);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          }}
+        />
+
+        {/* Modal de Sucesso com Download de PDF */}
+        {showSuccessModal && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+            <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8 border border-sky-100 animate-in zoom-in-95 duration-200 text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-emerald-100 text-emerald-600 mb-6">
+                <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+
+              <h3 className="text-2xl font-bold text-sky-950 mb-2">
+                Cadastro Concluído!
+              </h3>
+
+              <p className="text-sm text-slate-500 mb-8 leading-relaxed">
+                Sua ficha e contrato de associação foram enviados com sucesso para a CABEMCE.
+              </p>
+
+              <div className="space-y-3">
+                {pdfUrl && (
+                  <a
+                    href={pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center w-full bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold h-14 rounded-xl shadow-lg transition-all active:scale-[0.98] gap-2"
+                  >
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Baixar Meu Contrato (PDF)
+                  </a>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    window.location.reload();
+                  }}
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-base font-bold h-14 rounded-xl transition-all"
+                >
+                  Concluir
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -184,8 +296,16 @@ const Signup = () => {
             <Field label="CPF *">
               <Input value={data.cpf} onChange={(e) => setData("cpf", maskCPF(e.target.value))} placeholder="000.000.000-00" />
             </Field>
-            <Field label="Data de Nascimento *">
-              <Input type="date" value={data.dataNascimento} onChange={(e) => setData("dataNascimento", e.target.value)} />
+            <Field label={`Data de Nascimento *${calculateAge(data.dataNascimento) !== null ? ` (${calculateAge(data.dataNascimento)} anos)` : ""}`}>
+              <Input
+                type="date"
+                value={data.dataNascimento}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setData("dataNascimento", val);
+                  checkAgeRestriction({ ...data, dataNascimento: val });
+                }}
+              />
             </Field>
             <Field label="Estado Civil *">
               <Select value={data.estadoCivil} onValueChange={(v) => setData("estadoCivil", v)}>
@@ -234,50 +354,58 @@ const Signup = () => {
           </Section>
 
           {/* SEÇÃO 2 */}
-          <Section icon={<Briefcase />} title="2. Sobre a Carreira">
-            <Field label="Corporação *">
-              <RadioGroup
-                value={data.corporacao}
-                onValueChange={(v) => setData("corporacao", v)}
-                className="flex gap-8 pt-3"
-              >
-                <div className="flex items-center gap-2 cursor-pointer">
-                  <RadioGroupItem value="PM" id="pm" />
-                  <Label htmlFor="pm" className="cursor-pointer">PM</Label>
-                </div>
-                <div className="flex items-center gap-2 cursor-pointer">
-                  <RadioGroupItem value="BM" id="bm" />
-                  <Label htmlFor="bm" className="cursor-pointer">CBM</Label>
-                </div>
-              </RadioGroup>
-            </Field>
-            <Field label="Número de Matrícula *">
-              <Input value={data.matricula} onChange={(e) => setData("matricula", e.target.value)} />
-            </Field>
-            <Field label="Posto / Graduação *">
-              <Select value={data.postoGraduacao} onValueChange={(v) => setData("postoGraduacao", v)}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  {POSTOS_PM_BM.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="É associado civil? *">
+          <Section icon={<Briefcase />} title="2. Tipo de Associado e Carreira">
+            <Field label="É associado civil? *" full={data.associadoCivil === "Sim"}>
               <RadioGroup
                 value={data.associadoCivil}
-                onValueChange={(v) => setData("associadoCivil", v)}
+                onValueChange={(v) => {
+                  setData("associadoCivil", v);
+                  checkAgeRestriction({ ...data, associadoCivil: v });
+                }}
                 className="flex gap-8 pt-3"
               >
                 <div className="flex items-center gap-2 cursor-pointer">
                   <RadioGroupItem value="Sim" id="sim" />
-                  <Label htmlFor="sim" className="cursor-pointer">Sim</Label>
+                  <Label htmlFor="sim" className="cursor-pointer font-semibold text-sky-900">Sim (Civil)</Label>
                 </div>
                 <div className="flex items-center gap-2 cursor-pointer">
                   <RadioGroupItem value="Não" id="nao" />
-                  <Label htmlFor="nao" className="cursor-pointer">Não</Label>
+                  <Label htmlFor="nao" className="cursor-pointer font-semibold text-slate-700">Não (Militar)</Label>
                 </div>
               </RadioGroup>
             </Field>
+
+            {data.associadoCivil !== "Sim" && (
+              <>
+                <Field label="Corporação *">
+                  <RadioGroup
+                    value={data.corporacao}
+                    onValueChange={(v) => setData("corporacao", v)}
+                    className="flex gap-8 pt-3"
+                  >
+                    <div className="flex items-center gap-2 cursor-pointer">
+                      <RadioGroupItem value="PM" id="pm" />
+                      <Label htmlFor="pm" className="cursor-pointer">PM</Label>
+                    </div>
+                    <div className="flex items-center gap-2 cursor-pointer">
+                      <RadioGroupItem value="BM" id="bm" />
+                      <Label htmlFor="bm" className="cursor-pointer">CBM</Label>
+                    </div>
+                  </RadioGroup>
+                </Field>
+                <Field label="Número de Matrícula *">
+                  <Input value={data.matricula} onChange={(e) => setData("matricula", e.target.value)} />
+                </Field>
+                <Field label="Posto / Graduação *">
+                  <Select value={data.postoGraduacao} onValueChange={(v) => setData("postoGraduacao", v)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {POSTOS_PM_BM.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </>
+            )}
           </Section>
 
           {/* SEÇÃO 3 */}
@@ -355,7 +483,11 @@ const Signup = () => {
             className="w-full bg-red-600 hover:bg-red-700 text-white text-lg h-16 rounded-2xl shadow-xl transition-all active:scale-[0.98]"
           >
             <Send className="mr-3 h-5 w-5" />
-            {processing ? "Enviando..." : "Finalizar e Enviar Cadastro"}
+            {processing
+              ? "Enviando..."
+              : data.associadoCivil === "Sim"
+              ? "Avançar para o Contrato de Associado Civil"
+              : "Finalizar e Enviar Cadastro"}
           </Button>
         </form>
       </main>
@@ -408,6 +540,46 @@ const Signup = () => {
                 Concluir
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Restrição de Idade */}
+      {showAgeModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8 border border-red-100 animate-in zoom-in-95 duration-200 text-center">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 text-red-600 mb-6">
+              <svg className="h-9 w-9" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            
+            <h3 className="text-2xl font-bold text-slate-900 mb-2">
+              Limite de Idade Excedido
+            </h3>
+            
+            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+              Sua idade calculada é de <strong className="text-red-600 text-base">{ageModalInfo.age} anos</strong>.
+            </p>
+
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-left mb-6 text-xs text-red-900 space-y-2">
+              <p className="font-bold">Regras de limite de idade para cadastro:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li><strong>Associado Civil:</strong> limite de até 55 anos.</li>
+                <li><strong>Associado Militar:</strong> limite de até 49 anos.</li>
+              </ul>
+              <p className="pt-1 text-slate-600">
+                Como seu cadastro é de tipo <strong className="uppercase">{ageModalInfo.isCivil ? "Civil" : "Militar"}</strong>, o limite máximo permitido é de <strong>{ageModalInfo.limit} anos</strong>. Por este motivo, não é possível concluir a associação online.
+              </p>
+            </div>
+            
+            <button
+              type="button"
+              onClick={() => setShowAgeModal(false)}
+              className="w-full bg-red-600 hover:bg-red-700 text-white text-base font-bold h-14 rounded-xl transition-all shadow-md active:scale-[0.98]"
+            >
+              Entendi
+            </button>
           </div>
         </div>
       )}

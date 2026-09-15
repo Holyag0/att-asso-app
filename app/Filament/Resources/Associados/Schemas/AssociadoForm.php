@@ -19,6 +19,7 @@ class AssociadoForm
                 FileUpload::make('foto_associado_path')
                     ->label('Foto do Associado')
                     ->image()
+                    ->disk('public')
                     ->directory('associados/fotos')
                     ->columnSpanFull(),
                 Select::make('tipo_cadastro')
@@ -87,10 +88,12 @@ class AssociadoForm
                 FileUpload::make('rg_frente_path')
                     ->label('Envio de Documento - RG Frente')
                     ->image()
+                    ->disk('public')
                     ->directory('associados/rg'),
                 FileUpload::make('rg_verso_path')
                     ->label('Envio de Documento - RG Verso')
                     ->image()
+                    ->disk('public')
                     ->directory('associados/rg'),
                 Textarea::make('assinatura')
                     ->label('Assinatura (Base64)')

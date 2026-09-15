@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/Components/ui/button";
 import { Eraser } from "lucide-react";
 
 interface Props {

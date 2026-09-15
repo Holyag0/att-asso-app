@@ -15,6 +15,7 @@ class AssociadoInfolist
             ->components([
                 ImageEntry::make('foto_associado_path')
                     ->label('Foto do Associado')
+                    ->disk('public')
                     ->circular()
                     ->columnSpanFull(),
                 TextEntry::make('tipo_cadastro')
@@ -70,9 +71,11 @@ class AssociadoInfolist
                     ->label('É Civil?')
                     ->boolean(),
                 ImageEntry::make('rg_frente_path')
-                    ->label('Envio de Documento - RG Frente'),
+                    ->label('Envio de Documento - RG Frente')
+                    ->disk('public'),
                 ImageEntry::make('rg_verso_path')
-                    ->label('Envio de Documento - RG Verso'),
+                    ->label('Envio de Documento - RG Verso')
+                    ->disk('public'),
                 TextEntry::make('assinatura')
                     ->label('Assinatura')
                     ->html()

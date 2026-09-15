@@ -32,6 +32,12 @@ class Associado extends Model
         'assinatura',
         'aceite_termos',
         'ciencia_lgpd',
+        'contato_adicional_nome',
+        'contato_adicional_endereco',
+        'contato_adicional_bairro',
+        'contato_adicional_cidade',
+        'contato_adicional_estado',
+        'contato_adicional_telefone',
     ];
 
     protected $casts = [

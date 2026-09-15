@@ -33,16 +33,33 @@ class AssociadoController extends Controller
             'bairro' => 'required|string',
             'cidade' => 'required|string',
             'estado' => 'required|string|size:2',
-            'corporacao' => 'required|string',
-            'matricula' => 'required|string',
-            'postoGraduacao' => 'required|string',
+            'corporacao' => 'nullable|string',
+            'matricula' => 'nullable|string',
+            'postoGraduacao' => 'nullable|string',
             'rgFrente' => 'nullable|string', // Base64 or path
             'rgVerso' => 'nullable|string',
             'fotoAssociado' => 'nullable|string',
             'assinatura' => 'nullable|string',
             'autorizoInclusao' => 'accepted',
             'cienteLGPD' => 'accepted',
+            'contatoAdicionalNome' => 'nullable|string|max:255',
+            'contatoAdicionalEndereco' => 'nullable|string|max:255',
+            'contatoAdicionalBairro' => 'nullable|string|max:255',
+            'contatoAdicionalCidade' => 'nullable|string|max:255',
+            'contatoAdicionalEstado' => 'nullable|string|max:2',
+            'contatoAdicionalTelefone' => 'nullable|string|max:255',
         ]);
+
+        $isCivil = $request->input('associadoCivil') === 'Sim';
+        $maxAge = $isCivil ? 55 : 49;
+        $age = \Carbon\Carbon::parse($validated['dataNascimento'])->age;
+
+        if ($age > $maxAge) {
+            $tipo = $isCivil ? 'civil' : 'militar';
+            return redirect()->back()->withErrors([
+                'dataNascimento' => "Limite de idade excedido: associado {$tipo} pode se cadastrar até {$maxAge} anos (sua idade calculada: {$age} anos)."
+            ]);
+        }
 
         // Map React fields to Database fields if they differ
         $data = [
@@ -60,13 +77,19 @@ class AssociadoController extends Controller
             'bairro' => $validated['bairro'] ?? '',
             'cidade' => $validated['cidade'],
             'estado' => $validated['estado'],
-            'corporacao' => $validated['corporacao'],
-            'matricula' => $validated['matricula'],
-            'posto_graduacao' => $validated['postoGraduacao'],
-            'is_civil' => $request->input('associadoCivil') === 'Sim',
+            'corporacao' => $isCivil ? 'CIVIL' : ($validated['corporacao'] ?? 'CIVIL'),
+            'matricula' => $isCivil ? 'CIVIL' : ($validated['matricula'] ?? 'CIVIL'),
+            'posto_graduacao' => $isCivil ? 'CIVIL' : ($validated['postoGraduacao'] ?? 'CIVIL'),
+            'is_civil' => $isCivil,
             'assinatura' => $validated['assinatura'],
             'aceite_termos' => true,
             'ciencia_lgpd' => true,
+            'contato_adicional_nome' => $request->input('contatoAdicionalNome'),
+            'contato_adicional_endereco' => $request->input('contatoAdicionalEndereco'),
+            'contato_adicional_bairro' => $request->input('contatoAdicionalBairro'),
+            'contato_adicional_cidade' => $request->input('contatoAdicionalCidade'),
+            'contato_adicional_estado' => $request->input('contatoAdicionalEstado'),
+            'contato_adicional_telefone' => $request->input('contatoAdicionalTelefone'),
         ];
 
         // Handling Base64 images
@@ -87,10 +110,13 @@ class AssociadoController extends Controller
 
     public function generatePdf(Associado $associado)
     {
-        $pdf = Pdf::loadView('pdf.associado', ['associado' => $associado]);
+        $view = $associado->is_civil ? 'pdf.contrato_civil' : 'pdf.associado';
+        $prefix = $associado->is_civil ? 'contrato-civil-' : 'ficha-';
+
+        $pdf = Pdf::loadView($view, ['associado' => $associado]);
         $pdf->setPaper('a4', 'portrait');
 
-        $filename = 'ficha-'.str_replace(['.', '-'], '', $associado->cpf).'.pdf';
+        $filename = $prefix.str_replace(['.', '-'], '', $associado->cpf).'.pdf';
 
         return $pdf->download($filename);
     }
