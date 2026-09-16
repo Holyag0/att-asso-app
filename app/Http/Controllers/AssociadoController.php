@@ -12,9 +12,49 @@ use Inertia\Inertia;
 
 class AssociadoController extends Controller
 {
+    public function welcome()
+    {
+        return Inertia::render('Welcome');
+    }
+
+    public function adesaoCivil()
+    {
+        return Inertia::render('Associado/Signup', [
+            'tipoCadastro' => 'novo_cadastro',
+            'isCivil' => true,
+        ]);
+    }
+
+    public function atualizacaoCivil()
+    {
+        return Inertia::render('Associado/Signup', [
+            'tipoCadastro' => 'atualizacao_cadastral',
+            'isCivil' => true,
+        ]);
+    }
+
+    public function adesaoMilitar()
+    {
+        return Inertia::render('Associado/Signup', [
+            'tipoCadastro' => 'novo_cadastro',
+            'isCivil' => false,
+        ]);
+    }
+
+    public function atualizacaoMilitar()
+    {
+        return Inertia::render('Associado/Signup', [
+            'tipoCadastro' => 'atualizacao_cadastral',
+            'isCivil' => false,
+        ]);
+    }
+
     public function index()
     {
-        return Inertia::render('Associado/Signup');
+        return Inertia::render('Associado/Signup', [
+            'tipoCadastro' => 'novo_cadastro',
+            'isCivil' => false,
+        ]);
     }
 
     public function store(Request $request)
@@ -50,7 +90,8 @@ class AssociadoController extends Controller
             'contatoAdicionalTelefone' => 'nullable|string|max:255',
         ]);
 
-        $isCivil = $request->input('associadoCivil') === 'Sim';
+        $isCivil = $request->input('associadoCivil') === 'Sim' || $request->input('isCivil') === true;
+        $tipoCadastro = $request->input('tipoCadastro') ?? ($request->input('tipo_cadastro') ?? 'novo_cadastro');
         $maxAge = $isCivil ? 55 : 49;
         $age = \Carbon\Carbon::parse($validated['dataNascimento'])->age;
 
@@ -63,7 +104,7 @@ class AssociadoController extends Controller
 
         // Map React fields to Database fields if they differ
         $data = [
-            'tipo_cadastro' => 'att_cadastral',
+            'tipo_cadastro' => $tipoCadastro,
             'nome' => $validated['nomeCompleto'],
             'cpf' => $validated['cpf'],
             'data_nascimento' => $validated['dataNascimento'],
@@ -81,6 +122,7 @@ class AssociadoController extends Controller
             'matricula' => $isCivil ? 'CIVIL' : ($validated['matricula'] ?? 'CIVIL'),
             'posto_graduacao' => $isCivil ? 'CIVIL' : ($validated['postoGraduacao'] ?? 'CIVIL'),
             'is_civil' => $isCivil,
+            'codigo' => $isCivil ? null : ($request->input('codigo') ?? '633'),
             'assinatura' => $validated['assinatura'],
             'aceite_termos' => true,
             'ciencia_lgpd' => true,
@@ -99,44 +141,25 @@ class AssociadoController extends Controller
 
         $associado = Associado::create($data);
 
-        $pdfFichaUrl = URL::signedRoute('associados.pdf.public', ['associado' => $associado->id, 'type' => 'ficha']);
-        $pdfContratoUrl = $associado->is_civil
-            ? URL::signedRoute('associados.pdf.public', ['associado' => $associado->id, 'type' => 'contrato'])
-            : null;
+        $pdfUrl = URL::signedRoute('associados.pdf.public', ['associado' => $associado->id]);
 
         return redirect()->back()->with([
             'success' => true,
             'message' => 'Cadastro realizado com sucesso!',
-            'pdf_url' => $pdfFichaUrl,
-            'pdf_ficha_url' => $pdfFichaUrl,
-            'pdf_contrato_url' => $pdfContratoUrl,
+            'pdf_url' => $pdfUrl,
             'is_civil' => $associado->is_civil,
         ]);
     }
 
-    public function generateFichaPdf(Associado $associado)
+    public function generatePdf(Associado $associado)
     {
         $pdf = Pdf::loadView('pdf.associado', ['associado' => $associado]);
         $pdf->setPaper('a4', 'portrait');
 
-        $filename = 'ficha-'.str_replace(['.', '-'], '', $associado->cpf).'.pdf';
+        $prefix = $associado->is_civil ? 'ficha-e-contrato-' : 'ficha-';
+        $filename = $prefix.str_replace(['.', '-'], '', $associado->cpf).'.pdf';
 
         return $pdf->download($filename);
-    }
-
-    public function generateContratoPdf(Associado $associado)
-    {
-        $pdf = Pdf::loadView('pdf.contrato_civil', ['associado' => $associado]);
-        $pdf->setPaper('a4', 'portrait');
-
-        $filename = 'contrato-civil-'.str_replace(['.', '-'], '', $associado->cpf).'.pdf';
-
-        return $pdf->download($filename);
-    }
-
-    public function generatePdf(Associado $associado)
-    {
-        return $associado->is_civil ? $this->generateContratoPdf($associado) : $this->generateFichaPdf($associado);
     }
 
     public function generatePdfPublic(Request $request, Associado $associado)
@@ -145,14 +168,16 @@ class AssociadoController extends Controller
             abort(401);
         }
 
-        $type = $request->query('type');
-        if ($type === 'contrato') {
-            return $this->generateContratoPdf($associado);
-        }
-        if ($type === 'ficha') {
-            return $this->generateFichaPdf($associado);
-        }
+        return $this->generatePdf($associado);
+    }
 
+    public function generateFichaPdf(Associado $associado)
+    {
+        return $this->generatePdf($associado);
+    }
+
+    public function generateContratoPdf(Associado $associado)
+    {
         return $this->generatePdf($associado);
     }
 

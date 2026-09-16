@@ -27,6 +27,18 @@ class AssociadosTable
                     ->label('Nome')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('is_civil')
+                    ->label('Perfil')
+                    ->badge()
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Civil' : 'Militar')
+                    ->color(fn (bool $state): string => $state ? 'info' : 'warning')
+                    ->sortable(),
+                TextColumn::make('tipo_cadastro')
+                    ->label('Tipo de Cadastro')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => $state === 'novo_cadastro' ? 'Nova Adesão' : 'Atualização Cadastral')
+                    ->color(fn (string $state): string => $state === 'novo_cadastro' ? 'success' : 'gray')
+                    ->sortable(),
                 TextColumn::make('telefone_whatsapp')
                     ->label('Telefone')
                     ->searchable(),
@@ -43,6 +55,7 @@ class AssociadosTable
                     })
                     ->disabled(fn (Associado $record): bool => (bool) $record->is_civil),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 //
             ])
@@ -145,18 +158,11 @@ class AssociadosTable
                     ->extraAttributes(['class' => 'hidden'])
                     ->modalFooterActions([
                         EditAction::make(),
-                        Action::make('pdf_ficha')
-                            ->label('Ficha PDF')
+                        Action::make('pdf_completo')
+                            ->label('Baixar PDF Completo (Ficha e Contrato)')
                             ->icon('heroicon-o-document-arrow-down')
                             ->color('success')
-                            ->url(fn (Associado $record) => route('associados.pdf.ficha', $record))
-                            ->openUrlInNewTab(),
-                        Action::make('pdf_contrato')
-                            ->label('Contrato PDF')
-                            ->icon('heroicon-o-document-text')
-                            ->color('warning')
-                            ->visible(fn (Associado $record) => (bool) $record->is_civil)
-                            ->url(fn (Associado $record) => route('associados.pdf.contrato', $record))
+                            ->url(fn (Associado $record) => route('associados.pdf', $record))
                             ->openUrlInNewTab(),
                     ]),
             ])

@@ -21,8 +21,9 @@ import { SignaturePad } from "@/Components/SignaturePad";
 import { ESTADOS_CIVIS, POSTOS_PM_BM } from "@/types/form";
 import ContratoCivil from "@/Pages/Associado/ContratoCivil";
 
-const Signup = () => {
+const Signup = ({ tipoCadastro = "novo_cadastro", isCivil = false }) => {
   const { data, setData, post, processing, errors } = useForm({
+    tipoCadastro: tipoCadastro,
     nomeCompleto: "",
     dataNascimento: "",
     cpf: "",
@@ -40,7 +41,7 @@ const Signup = () => {
     corporacao: "PM",
     matricula: "",
     postoGraduacao: "",
-    associadoCivil: "Não",
+    associadoCivil: isCivil ? "Sim" : "Não",
     rgFrente: "",
     rgFrenteName: "",
     rgVerso: "",
@@ -57,43 +58,30 @@ const Signup = () => {
   const [showAgeModal, setShowAgeModal] = useState(false);
   const [generatingContractLoading, setGeneratingContractLoading] = useState(false);
   const [ageModalInfo, setAgeModalInfo] = useState({ age: 0, limit: 0, isCivil: false });
-  const [pdfFichaUrl, setPdfFichaUrl] = useState("");
-  const [pdfContratoUrl, setPdfContratoUrl] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
   const [isCivilMember, setIsCivilMember] = useState(false);
   const [step, setStep] = useState(1);
 
-  const triggerSimultaneousDownloads = (fichaUrl = pdfFichaUrl, contratoUrl = pdfContratoUrl) => {
-    if (fichaUrl) {
-      const a1 = document.createElement("a");
-      a1.href = fichaUrl;
-      a1.target = "_blank";
-      document.body.appendChild(a1);
-      a1.click();
-      document.body.removeChild(a1);
-    }
-    if (contratoUrl) {
-      setTimeout(() => {
-        const a2 = document.createElement("a");
-        a2.href = contratoUrl;
-        a2.target = "_blank";
-        document.body.appendChild(a2);
-        a2.click();
-        document.body.removeChild(a2);
-      }, 400);
+  const triggerDownload = (url = pdfUrl) => {
+    if (url) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
   };
 
   const handleSuccess = (flash) => {
-    const ficha = flash?.pdf_ficha_url || flash?.pdf_url || "";
-    const contrato = flash?.pdf_contrato_url || "";
+    const url = flash?.pdf_url || flash?.pdf_ficha_url || "";
     const civil = !!flash?.is_civil;
 
-    setPdfFichaUrl(ficha);
-    setPdfContratoUrl(contrato);
+    setPdfUrl(url);
     setIsCivilMember(civil);
     setShowSuccessModal(true);
 
-    triggerSimultaneousDownloads(ficha, contrato);
+    triggerDownload(url);
   };
 
   const calculateAge = (birthDateString) => {
@@ -231,60 +219,23 @@ const Signup = () => {
 
           <p className="text-sm text-slate-500 mb-8 leading-relaxed">
             {isCivilMember
-              ? "Sua ficha e contrato de associação foram enviados com sucesso para a CABEMCE. Os downloads foram iniciados."
-              : "Sua ficha de associação foi enviada com sucesso para a CABEMCE. O download foi iniciado."}
+              ? "Sua ficha e contrato de associação foram gerados em um único arquivo PDF. O download foi iniciado."
+              : "Sua ficha de associação foi gerada em formato PDF. O download foi iniciado."}
           </p>
 
           <div className="space-y-3">
-            {isCivilMember ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => triggerSimultaneousDownloads(pdfFichaUrl, pdfContratoUrl)}
-                  className="flex items-center justify-center w-full bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold h-14 rounded-xl shadow-lg transition-all active:scale-[0.98] gap-2"
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Baixar Ficha e Contrato (PDFs)
-                </button>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {pdfFichaUrl && (
-                    <a
-                      href={pdfFichaUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center bg-sky-100 hover:bg-sky-200 text-sky-800 font-bold p-3 rounded-xl gap-1"
-                    >
-                      Ficha (PDF)
-                    </a>
-                  )}
-                  {pdfContratoUrl && (
-                    <a
-                      href={pdfContratoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold p-3 rounded-xl gap-1"
-                    >
-                      Contrato (PDF)
-                    </a>
-                  )}
-                </div>
-              </>
-            ) : (
-              pdfFichaUrl && (
-                <a
-                  href={pdfFichaUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center w-full bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold h-14 rounded-xl shadow-lg transition-all active:scale-[0.98] gap-2"
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Baixar Minha Ficha (PDF)
-                </a>
-              )
+            {pdfUrl && (
+              <a
+                href={pdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-full bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold h-14 rounded-xl shadow-lg transition-all active:scale-[0.98] gap-2"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                {isCivilMember ? "Baixar Ficha e Contrato (PDF Único)" : "Baixar Ficha de Associação (PDF)"}
+              </a>
             )}
 
             <button
@@ -364,8 +315,23 @@ const Signup = () => {
               <p className="text-lg opacity-80">Caixa Beneficente dos Militares do Ceará</p>
             </div>
           </div>
-          <div className="mt-10">
-            <h2 className="text-2xl font-semibold italic">Ficha de Associação Online</h2>
+          <div className="mt-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span className="inline-block px-3.5 py-1 rounded-full bg-white/20 text-xs font-bold uppercase tracking-wider mb-2">
+                {data.tipoCadastro === "novo_cadastro" ? "Nova Adesão" : "Atualização Cadastral"}
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-bold italic">
+                {data.associadoCivil === "Sim"
+                  ? (data.tipoCadastro === "novo_cadastro" ? "Ficha de Adesão - Associado Civil" : "Ficha de Atualização Cadastral - Associado Civil")
+                  : (data.tipoCadastro === "novo_cadastro" ? "Ficha de Adesão - Associado Militar" : "Ficha de Atualização Cadastral - Associado Militar")}
+              </h2>
+            </div>
+            <a
+              href={route("welcome")}
+              className="inline-flex items-center text-xs font-bold bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl border border-white/20 transition-all self-start sm:self-auto"
+            >
+              ← Alterar opção / Voltar
+            </a>
           </div>
         </div>
       </header>
@@ -458,60 +424,38 @@ const Signup = () => {
             </Field>
           </Section>
 
-          {/* SEÇÃO 2 */}
-          <Section icon={<Briefcase />} title="2. Tipo de Associado e Carreira">
-            <Field label="É associado civil? *" full={data.associadoCivil === "Sim"}>
-              <RadioGroup
-                value={data.associadoCivil}
-                onValueChange={(v) => {
-                  setData("associadoCivil", v);
-                  checkAgeRestriction({ ...data, associadoCivil: v });
-                }}
-                className="flex gap-8 pt-3"
-              >
-                <div className="flex items-center gap-2 cursor-pointer">
-                  <RadioGroupItem value="Sim" id="sim" />
-                  <Label htmlFor="sim" className="cursor-pointer font-semibold text-sky-900">Sim (Civil)</Label>
-                </div>
-                <div className="flex items-center gap-2 cursor-pointer">
-                  <RadioGroupItem value="Não" id="nao" />
-                  <Label htmlFor="nao" className="cursor-pointer font-semibold text-slate-700">Não (Militar)</Label>
-                </div>
-              </RadioGroup>
-            </Field>
-
-            {data.associadoCivil !== "Sim" && (
-              <>
-                <Field label="Corporação *">
-                  <RadioGroup
-                    value={data.corporacao}
-                    onValueChange={(v) => setData("corporacao", v)}
-                    className="flex gap-8 pt-3"
-                  >
-                    <div className="flex items-center gap-2 cursor-pointer">
-                      <RadioGroupItem value="PM" id="pm" />
-                      <Label htmlFor="pm" className="cursor-pointer">PM</Label>
-                    </div>
-                    <div className="flex items-center gap-2 cursor-pointer">
-                      <RadioGroupItem value="BM" id="bm" />
-                      <Label htmlFor="bm" className="cursor-pointer">CBM</Label>
-                    </div>
-                  </RadioGroup>
-                </Field>
-                <Field label="Número de Matrícula *">
-                  <Input value={data.matricula} onChange={(e) => setData("matricula", e.target.value)} />
-                </Field>
-                <Field label="Posto / Graduação *">
-                  <Select value={data.postoGraduacao} onValueChange={(v) => setData("postoGraduacao", v)}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>
-                      {POSTOS_PM_BM.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              </>
-            )}
-          </Section>
+          {/* SEÇÃO 2 (Apenas para Militares) */}
+          {data.associadoCivil !== "Sim" && (
+            <Section icon={<Briefcase />} title="2. Dados Funcionais e Carreira">
+              <Field label="Corporação *">
+                <RadioGroup
+                  value={data.corporacao}
+                  onValueChange={(v) => setData("corporacao", v)}
+                  className="flex gap-8 pt-3"
+                >
+                  <div className="flex items-center gap-2 cursor-pointer">
+                    <RadioGroupItem value="PM" id="pm" />
+                    <Label htmlFor="pm" className="cursor-pointer">PM</Label>
+                  </div>
+                  <div className="flex items-center gap-2 cursor-pointer">
+                    <RadioGroupItem value="BM" id="bm" />
+                    <Label htmlFor="bm" className="cursor-pointer">CBM</Label>
+                  </div>
+                </RadioGroup>
+              </Field>
+              <Field label="Número de Matrícula *">
+                <Input value={data.matricula} onChange={(e) => setData("matricula", e.target.value)} />
+              </Field>
+              <Field label="Posto / Graduação *">
+                <Select value={data.postoGraduacao} onValueChange={(v) => setData("postoGraduacao", v)}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {POSTOS_PM_BM.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </Section>
+          )}
 
           {/* SEÇÃO 3 */}
           <Section icon={<FileText />} title="3. Envio de Documentos">
