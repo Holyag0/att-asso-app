@@ -55,9 +55,46 @@ const Signup = () => {
   const [loadingCep, setLoadingCep] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showAgeModal, setShowAgeModal] = useState(false);
+  const [generatingContractLoading, setGeneratingContractLoading] = useState(false);
   const [ageModalInfo, setAgeModalInfo] = useState({ age: 0, limit: 0, isCivil: false });
-  const [pdfUrl, setPdfUrl] = useState("");
+  const [pdfFichaUrl, setPdfFichaUrl] = useState("");
+  const [pdfContratoUrl, setPdfContratoUrl] = useState("");
+  const [isCivilMember, setIsCivilMember] = useState(false);
   const [step, setStep] = useState(1);
+
+  const triggerSimultaneousDownloads = (fichaUrl = pdfFichaUrl, contratoUrl = pdfContratoUrl) => {
+    if (fichaUrl) {
+      const a1 = document.createElement("a");
+      a1.href = fichaUrl;
+      a1.target = "_blank";
+      document.body.appendChild(a1);
+      a1.click();
+      document.body.removeChild(a1);
+    }
+    if (contratoUrl) {
+      setTimeout(() => {
+        const a2 = document.createElement("a");
+        a2.href = contratoUrl;
+        a2.target = "_blank";
+        document.body.appendChild(a2);
+        a2.click();
+        document.body.removeChild(a2);
+      }, 400);
+    }
+  };
+
+  const handleSuccess = (flash) => {
+    const ficha = flash?.pdf_ficha_url || flash?.pdf_url || "";
+    const contrato = flash?.pdf_contrato_url || "";
+    const civil = !!flash?.is_civil;
+
+    setPdfFichaUrl(ficha);
+    setPdfContratoUrl(contrato);
+    setIsCivilMember(civil);
+    setShowSuccessModal(true);
+
+    triggerSimultaneousDownloads(ficha, contrato);
+  };
 
   const calculateAge = (birthDateString) => {
     if (!birthDateString || birthDateString.length < 10) return null;
@@ -153,8 +190,12 @@ const Signup = () => {
     }
 
     if (data.associadoCivil === "Sim") {
-      setStep(2);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      setGeneratingContractLoading(true);
+      setTimeout(() => {
+        setGeneratingContractLoading(false);
+        setStep(2);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 3000);
       return;
     }
 
@@ -162,8 +203,7 @@ const Signup = () => {
       onSuccess: (page) => {
         const flash = page.props.flash;
         if (flash && flash.success) {
-          setPdfUrl(flash.pdf_url);
-          setShowSuccessModal(true);
+          handleSuccess(flash);
         } else {
           toast.success("Cadastro realizado com sucesso!");
         }
@@ -174,16 +214,127 @@ const Signup = () => {
     });
   };
 
+  const renderSuccessModal = () => {
+    if (!showSuccessModal) return null;
+    return (
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8 border border-sky-100 animate-in zoom-in-95 duration-200 text-center">
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-emerald-100 text-emerald-600 mb-6">
+            <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+
+          <h3 className="text-2xl font-bold text-sky-950 mb-2">
+            Cadastro Concluído!
+          </h3>
+
+          <p className="text-sm text-slate-500 mb-8 leading-relaxed">
+            {isCivilMember
+              ? "Sua ficha e contrato de associação foram enviados com sucesso para a CABEMCE. Os downloads foram iniciados."
+              : "Sua ficha de associação foi enviada com sucesso para a CABEMCE. O download foi iniciado."}
+          </p>
+
+          <div className="space-y-3">
+            {isCivilMember ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => triggerSimultaneousDownloads(pdfFichaUrl, pdfContratoUrl)}
+                  className="flex items-center justify-center w-full bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold h-14 rounded-xl shadow-lg transition-all active:scale-[0.98] gap-2"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Baixar Ficha e Contrato (PDFs)
+                </button>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {pdfFichaUrl && (
+                    <a
+                      href={pdfFichaUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center bg-sky-100 hover:bg-sky-200 text-sky-800 font-bold p-3 rounded-xl gap-1"
+                    >
+                      Ficha (PDF)
+                    </a>
+                  )}
+                  {pdfContratoUrl && (
+                    <a
+                      href={pdfContratoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold p-3 rounded-xl gap-1"
+                    >
+                      Contrato (PDF)
+                    </a>
+                  )}
+                </div>
+              </>
+            ) : (
+              pdfFichaUrl && (
+                <a
+                  href={pdfFichaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center w-full bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold h-14 rounded-xl shadow-lg transition-all active:scale-[0.98] gap-2"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Baixar Minha Ficha (PDF)
+                </a>
+              )
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowSuccessModal(false);
+                window.location.reload();
+              }}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-base font-bold h-14 rounded-xl transition-all"
+            >
+              Concluir
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderGeneratingContractModal = () => {
+    if (!generatingContractLoading) return null;
+    return (
+      <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8 border border-sky-100 animate-in zoom-in-95 duration-200 text-center space-y-4">
+          <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-sky-50 text-sky-600 mb-2">
+            <svg className="animate-spin h-10 w-10 text-sky-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+
+          <h3 className="text-2xl font-bold text-sky-950">
+            Gerando o seu contrato, aguarde...
+          </h3>
+
+          <p className="text-sm text-slate-500 leading-relaxed">
+            Estamos preparando as cláusulas e o documento de adesão com os seus dados cadastrais.
+          </p>
+        </div>
+      </div>
+    );
+  };
+
   if (step === 2) {
     return (
       <>
         <ContratoCivil
           initialData={data}
-          onBack={(isSuccess, pdf_url) => {
-            if (isSuccess) {
-              setPdfUrl(pdf_url);
-              setShowSuccessModal(true);
-              setStep(1);
+          onBack={(isSuccess, flash) => {
+            if (isSuccess && flash) {
+              handleSuccess(flash);
             } else {
               setStep(1);
               window.scrollTo({ top: 0, behavior: "smooth" });
@@ -191,53 +342,7 @@ const Signup = () => {
           }}
         />
 
-        {/* Modal de Sucesso com Download de PDF */}
-        {showSuccessModal && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-            <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8 border border-sky-100 animate-in zoom-in-95 duration-200 text-center">
-              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-emerald-100 text-emerald-600 mb-6">
-                <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-
-              <h3 className="text-2xl font-bold text-sky-950 mb-2">
-                Cadastro Concluído!
-              </h3>
-
-              <p className="text-sm text-slate-500 mb-8 leading-relaxed">
-                Sua ficha e contrato de associação foram enviados com sucesso para a CABEMCE.
-              </p>
-
-              <div className="space-y-3">
-                {pdfUrl && (
-                  <a
-                    href={pdfUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center w-full bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold h-14 rounded-xl shadow-lg transition-all active:scale-[0.98] gap-2"
-                  >
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Baixar Meu Contrato (PDF)
-                  </a>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowSuccessModal(false);
-                    window.location.reload();
-                  }}
-                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-base font-bold h-14 rounded-xl transition-all"
-                >
-                  Concluir
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {renderSuccessModal()}
       </>
     );
   }
@@ -496,53 +601,8 @@ const Signup = () => {
         © {new Date().getFullYear()} CABEMCE — Caixa Beneficente dos Militares do Ceará
       </footer>
 
-      {/* Modal de Sucesso com Download de PDF */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8 border border-sky-100 animate-in zoom-in-95 duration-200 text-center">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-emerald-100 text-emerald-600 mb-6">
-              <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            
-            <h3 className="text-2xl font-bold text-sky-950 mb-2">
-              Cadastro Concluído!
-            </h3>
-            
-            <p className="text-sm text-slate-500 mb-8 leading-relaxed">
-              Sua ficha de associação foi enviada com sucesso para a CABEMCE.
-            </p>
-            
-            <div className="space-y-3">
-              {pdfUrl && (
-                <a
-                  href={pdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center w-full bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold h-14 rounded-xl shadow-lg transition-all active:scale-[0.98] gap-2"
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Baixar Minha Ficha (PDF)
-                </a>
-              )}
-              
-              <button
-                type="button"
-                onClick={() => {
-                  setShowSuccessModal(false);
-                  window.location.reload();
-                }}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-base font-bold h-14 rounded-xl transition-all"
-              >
-                Concluir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {renderGeneratingContractModal()}
+      {renderSuccessModal()}
 
       {/* Modal de Restrição de Idade */}
       {showAgeModal && (

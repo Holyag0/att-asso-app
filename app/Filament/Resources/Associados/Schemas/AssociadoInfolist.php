@@ -70,6 +70,9 @@ class AssociadoInfolist
                 IconEntry::make('is_civil')
                     ->label('É Civil?')
                     ->boolean(),
+                TextEntry::make('codigo')
+                    ->label('Código Militar')
+                    ->placeholder('-'),
                 ImageEntry::make('rg_frente_path')
                     ->label('Envio de Documento - RG Frente')
                     ->disk('public'),

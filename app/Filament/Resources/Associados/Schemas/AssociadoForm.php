@@ -85,6 +85,13 @@ class AssociadoForm
                 Toggle::make('is_civil')
                     ->label('É Civil?')
                     ->required(),
+                Select::make('codigo')
+                    ->label('Código (Militar)')
+                    ->options([
+                        '633' => '633',
+                        '634' => '634',
+                    ])
+                    ->default('633'),
                 FileUpload::make('rg_frente_path')
                     ->label('Envio de Documento - RG Frente')
                     ->image()

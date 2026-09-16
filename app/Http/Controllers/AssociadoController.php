@@ -99,32 +99,58 @@ class AssociadoController extends Controller
 
         $associado = Associado::create($data);
 
-        $pdfUrl = URL::signedRoute('associados.pdf.public', ['associado' => $associado->id]);
+        $pdfFichaUrl = URL::signedRoute('associados.pdf.public', ['associado' => $associado->id, 'type' => 'ficha']);
+        $pdfContratoUrl = $associado->is_civil
+            ? URL::signedRoute('associados.pdf.public', ['associado' => $associado->id, 'type' => 'contrato'])
+            : null;
 
         return redirect()->back()->with([
             'success' => true,
             'message' => 'Cadastro realizado com sucesso!',
-            'pdf_url' => $pdfUrl,
+            'pdf_url' => $pdfFichaUrl,
+            'pdf_ficha_url' => $pdfFichaUrl,
+            'pdf_contrato_url' => $pdfContratoUrl,
+            'is_civil' => $associado->is_civil,
         ]);
+    }
+
+    public function generateFichaPdf(Associado $associado)
+    {
+        $pdf = Pdf::loadView('pdf.associado', ['associado' => $associado]);
+        $pdf->setPaper('a4', 'portrait');
+
+        $filename = 'ficha-'.str_replace(['.', '-'], '', $associado->cpf).'.pdf';
+
+        return $pdf->download($filename);
+    }
+
+    public function generateContratoPdf(Associado $associado)
+    {
+        $pdf = Pdf::loadView('pdf.contrato_civil', ['associado' => $associado]);
+        $pdf->setPaper('a4', 'portrait');
+
+        $filename = 'contrato-civil-'.str_replace(['.', '-'], '', $associado->cpf).'.pdf';
+
+        return $pdf->download($filename);
     }
 
     public function generatePdf(Associado $associado)
     {
-        $view = $associado->is_civil ? 'pdf.contrato_civil' : 'pdf.associado';
-        $prefix = $associado->is_civil ? 'contrato-civil-' : 'ficha-';
-
-        $pdf = Pdf::loadView($view, ['associado' => $associado]);
-        $pdf->setPaper('a4', 'portrait');
-
-        $filename = $prefix.str_replace(['.', '-'], '', $associado->cpf).'.pdf';
-
-        return $pdf->download($filename);
+        return $associado->is_civil ? $this->generateContratoPdf($associado) : $this->generateFichaPdf($associado);
     }
 
     public function generatePdfPublic(Request $request, Associado $associado)
     {
         if (! $request->hasValidSignature()) {
             abort(401);
+        }
+
+        $type = $request->query('type');
+        if ($type === 'contrato') {
+            return $this->generateContratoPdf($associado);
+        }
+        if ($type === 'ficha') {
+            return $this->generateFichaPdf($associado);
         }
 
         return $this->generatePdf($associado);

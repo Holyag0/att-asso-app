@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Associados\Tables;
 
+use App\Filament\Resources\Associados\AssociadoResource;
 use App\Models\Associado;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -13,6 +14,7 @@ use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
 use Filament\Schemas\Components\Grid;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 
 class AssociadosTable
@@ -22,24 +24,24 @@ class AssociadosTable
         return $table
             ->columns([
                 TextColumn::make('nome')
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('matricula')
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('posto_graduacao')
-                    ->label('Posto/Graduação')
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('corporacao')
-                    ->label('Corporação')
+                    ->label('Nome')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('telefone_whatsapp')
                     ->label('Telefone')
                     ->searchable(),
                 TextColumn::make('email')
+                    ->label('E-mail')
                     ->searchable(),
+                ToggleColumn::make('codigo')
+                    ->label('Código (633 / 634)')
+                    ->getStateUsing(fn (Associado $record): bool => $record->codigo === '634')
+                    ->updateStateUsing(function (Associado $record, bool $state): void {
+                        if (! $record->is_civil) {
+                            $record->update(['codigo' => $state ? '634' : '633']);
+                        }
+                    })
+                    ->disabled(fn (Associado $record): bool => (bool) $record->is_civil),
             ])
             ->filters([
                 //
@@ -60,6 +62,7 @@ class AssociadosTable
                                 'matricula' => 'Matrícula',
                                 'posto_graduacao' => 'Posto/Graduação',
                                 'corporacao' => 'Corporação',
+                                'codigo' => 'Código (633/634)',
                                 'data_nascimento' => 'Data de Nascimento',
                                 'estado_civil' => 'Estado Civil',
                                 'naturalidade' => 'Naturalidade',
@@ -72,7 +75,7 @@ class AssociadosTable
                                 'estado' => 'Estado',
                                 'created_at' => 'Data de Cadastro',
                             ])
-                            ->default(['nome', 'cpf', 'email', 'telefone_whatsapp', 'matricula'])
+                            ->default(['nome', 'cpf', 'email', 'telefone_whatsapp', 'matricula', 'codigo'])
                             ->columns(2)
                             ->required(),
                         Grid::make(2)
@@ -135,15 +138,27 @@ class AssociadosTable
                         return response()->stream($callback, 200, $headers);
                     }),
             ])
+            ->recordUrl(null)
+            ->recordAction('view')
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-                Action::make('pdf')
-                    ->label('Ficha PDF')
-                    ->icon('heroicon-o-document-arrow-down')
-                    ->color('success')
-                    ->url(fn ($record) => route('associados.pdf', $record))
-                    ->openUrlInNewTab(),
+                ViewAction::make()
+                    ->extraAttributes(['class' => 'hidden'])
+                    ->modalFooterActions([
+                        EditAction::make(),
+                        Action::make('pdf_ficha')
+                            ->label('Ficha PDF')
+                            ->icon('heroicon-o-document-arrow-down')
+                            ->color('success')
+                            ->url(fn (Associado $record) => route('associados.pdf.ficha', $record))
+                            ->openUrlInNewTab(),
+                        Action::make('pdf_contrato')
+                            ->label('Contrato PDF')
+                            ->icon('heroicon-o-document-text')
+                            ->color('warning')
+                            ->visible(fn (Associado $record) => (bool) $record->is_civil)
+                            ->url(fn (Associado $record) => route('associados.pdf.contrato', $record))
+                            ->openUrlInNewTab(),
+                    ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

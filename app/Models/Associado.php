@@ -26,6 +26,7 @@ class Associado extends Model
         'matricula',
         'posto_graduacao',
         'is_civil',
+        'codigo',
         'rg_frente_path',
         'rg_verso_path',
         'foto_associado_path',

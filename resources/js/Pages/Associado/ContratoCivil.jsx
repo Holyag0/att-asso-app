@@ -30,7 +30,7 @@ const ContratoCivil = ({ initialData, onBack }) => {
       onSuccess: (page) => {
         const flash = page.props.flash;
         if (flash && flash.success) {
-          if (onBack) onBack(true, flash.pdf_url);
+          if (onBack) onBack(true, flash);
         } else {
           toast.success("Contrato e Ficha enviados com sucesso!");
         }

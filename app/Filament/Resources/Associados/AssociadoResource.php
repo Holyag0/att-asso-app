@@ -51,7 +51,6 @@ class AssociadoResource extends Resource
         return [
             'index' => ListAssociados::route('/'),
             'create' => CreateAssociado::route('/create'),
-            'view' => ViewAssociado::route('/{record}'),
             'edit' => EditAssociado::route('/{record}/edit'),
         ];
     }
