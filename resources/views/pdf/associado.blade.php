@@ -295,22 +295,28 @@
         <div class="section-content">
             <table class="grid-table">
                 <tr>
-                    <td style="width: 25%;">
+                    <td style="width: 20%;">
                         <span class="label">Corporação</span>
                         <span class="value">{{ $associado->corporacao }}</span>
                     </td>
-                    <td style="width: 25%;">
+                    <td style="width: 20%;">
                         <span class="label">Matrícula</span>
                         <span class="value">{{ $associado->matricula }}</span>
                     </td>
-                    <td style="width: 25%;">
+                    <td style="width: 20%;">
                         <span class="label">Posto / Graduação</span>
                         <span class="value">{{ $associado->posto_graduacao }}</span>
                     </td>
-                    <td style="width: 25%;">
+                    <td style="width: 20%;">
                         <span class="label">É Civil?</span>
                         <span class="value">{{ $associado->is_civil ? 'Sim' : 'Não' }}</span>
                     </td>
+                    @if($associado->codigo)
+                    <td style="width: 20%;">
+                        <span class="label">Rubrica (Código)</span>
+                        <span class="value">{{ $associado->codigo }}</span>
+                    </td>
+                    @endif
                 </tr>
             </table>
         </div>
